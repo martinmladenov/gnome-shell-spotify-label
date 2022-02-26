@@ -15,6 +15,8 @@ let LEFT_PADDING, RIGHT_PADDING, MAX_STRING_LENGTH, REFRESH_RATE, FRIENDLY_GREET
 var settings, onLeftPaddingChanged, onRightPaddingChanged, onExtensionPlaceChanged, onExtensionIndexChanged, onToggleModeChanged;
 let _httpSession;
 let spMenu;
+let lyricsProc;
+let lastLyrics = "";
 
 const SpotifyLabel = new Lang.Class({
 	Name: 'SpotifyLabel',
@@ -58,6 +60,17 @@ const SpotifyLabel = new Lang.Class({
 		//Place the actor/label at the "end" (rightmost) position within the left box
 		children = Main.panel._leftBox.get_children();
 		Main.panel._leftBox.insert_child_at_index(this.actor, children.length)
+
+		// Lyrics
+		lyricsProc = Gio.Subprocess.new(['sptlrx', 'pipe'], Gio.SubprocessFlags.STDOUT_PIPE)
+
+		let stdoutStream = new Gio.DataInputStream({
+			base_stream: lyricsProc.get_stdout_pipe(),
+			close_base_stream: true
+		});
+	
+		// Start the loop
+		readLyricsOutput(stdoutStream);
 
 		this._refresh();
 	},
@@ -103,7 +116,7 @@ const SpotifyLabel = new Lang.Class({
 			return;
 		}
 
-		var labelstring = parseSpotifyData(out.toString());
+		var labelstring = parseSpotifyData(out.toString()) + "     " + lastLyrics;
 		this._refreshUI(labelstring);
 	},
 
@@ -129,9 +142,26 @@ const SpotifyLabel = new Lang.Class({
 		this._timeout = undefined;
 
 		this.menu.removeAll();
+
+		lyricsProc.force_exit()
 	}
 }
 );
+
+function readLyricsOutput(stdout) {
+    stdout.read_line_async(GLib.PRIORITY_LOW, null, (stdout, res) => {
+        try {
+            let line = stdout.read_line_finish_utf8(res)[0];
+
+            if (line !== null) {
+                lastLyrics = line;
+                readLyricsOutput(stdout);
+            }
+        } catch (e) {
+            logError(e);
+        }
+    });
+}
 
 function init() {
 }
