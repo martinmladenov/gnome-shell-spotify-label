@@ -116,12 +116,15 @@ const SpotifyLabel = new Lang.Class({
 			return;
 		}
 
-		var labelstring = parseSpotifyData(out.toString()) + "     " + lastLyrics;
+		var labelstring = parseSpotifyData(out.toString());
 		this._refreshUI(labelstring);
 	},
 
 	_refreshUI: function (data) {
-		let txt = data.toString();
+		if(data != null){
+			lastData = data;
+		}
+		let txt = lastData.toString() + "     " + lastLyrics;
 		this.buttonText.set_text(txt);
 	},
 
@@ -155,6 +158,7 @@ function readLyricsOutput(stdout) {
 
             if (line !== null) {
                 lastLyrics = line;
+				spMenu._refreshUI(null);
                 readLyricsOutput(stdout);
             }
         } catch (e) {
