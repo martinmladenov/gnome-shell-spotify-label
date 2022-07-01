@@ -17,6 +17,7 @@ let _httpSession;
 let spMenu;
 let lyricsProc;
 let lastLyrics = "";
+let prevLyrics = "";
 
 const SpotifyLabel = new Lang.Class({
 	Name: 'SpotifyLabel',
@@ -124,7 +125,7 @@ const SpotifyLabel = new Lang.Class({
 		if(data != null){
 			lastData = data;
 		}
-		let txt = lastData.toString() + "     " + lastLyrics;
+		let txt = lastData.toString() + "     " + prevLyrics + "     " + lastLyrics;
 		this.buttonText.set_text(txt);
 	},
 
@@ -157,6 +158,7 @@ function readLyricsOutput(stdout) {
             let line = stdout.read_line_finish_utf8(res)[0];
 
             if (line !== null) {
+				prevLyrics = lastLyrics;
                 lastLyrics = line;
 				spMenu._refreshUI(null);
                 readLyricsOutput(stdout);
